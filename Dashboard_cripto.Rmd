@@ -1,0 +1,134 @@
+---
+title: "Gráficos das criptos"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    css: style.css
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(ggplot2)
+library(dplyr)
+library(shiny)
+
+library(tidyquant)
+library(timetk)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+
+# Banco de dados
+criptomoedas <- tq_get(c("LTC-USD","XRP-USD","USDT-USD","ADA-USD"),
+                       from = "2012-01-01",
+                       to = "2022-06-21"
+) %>%
+  select(date, symbol, close) %>%
+  mutate(symbol = sub("-USD", "", symbol))
+```
+
+Gráficos Simples 
+===================================================================
+
+
+### Grafico dos dados agrupados
+-----------------------------------------------------------------------
+```{r}
+criptomoedas %>%
+  plot_time_series(date, close, symbol, .smooth = FALSE)
+```
+Column {.tabset}
+----------------------------------------------------------------
+### Gráfico com log
+```{r}
+criptomoedas %>%
+  mutate(close_log = log1p(close)) %>%
+  plot_time_series(date, close_log, symbol, .smooth = FALSE)
+```
+### Gráfico padronizado com o log
+```{r}
+criptomoedas %>%
+  group_by(symbol) %>%
+  mutate(close_standardize = standardize_vec(log1p(close))) %>%
+  ungroup() %>%
+  plot_time_series(date, close_standardize, symbol, .smooth = FALSE)
+
+```
+
+Gráfico das correlações (parte 1)
+==============================================================
+Column {.tabset}
+--------------------------------------------------------------
+
+### Correlação Litecoin e Ripple
+```{r}
+criptomoedas_wider <- criptomoedas %>%
+  pivot_wider(names_from = symbol, values_from = close) %>%
+  drop_na() %>%
+  mutate(across(LTC:XRP, .fns = log1p))
+
+ggplot(criptomoedas_wider) +
+  aes(x = LTC, y = XRP) +
+  geom_point()
+```
+Column {.tabset}
+--------------------------------------------------------------
+
+### Correlação Litecoin e Tether
+```{r}
+
+ggplot(criptomoedas_wider) +
+  aes(x = LTC, y = USDT) +
+  geom_point()
+```
+
+Gráfico das correlações (parte 2)
+==============================================================
+
+Column {.tabset}
+--------------------------------------------------------------
+
+### Correlação Litecoin e Cardano
+```{r}
+
+ggplot(criptomoedas_wider) +
+  aes(x = LTC, y = ADA) +
+  geom_point()
+```
+Column {.tabset}
+--------------------------------------------------------------
+
+### Correlação Tether e Ripple
+```{r}
+
+ggplot(criptomoedas_wider) +
+  aes(x = USDT, y = XRP) +
+  geom_point()
+```
+
+Gráfico das correlações (parte 3)
+==============================================================
+
+Column {.tabset}
+--------------------------------------------------------------
+
+### Correlação Tether e Cardano
+```{r}
+
+ggplot(criptomoedas_wider) +
+  aes(x = USDT, y = ADA) +
+  geom_point()
+```
+Column {.tabset}
+--------------------------------------------------------------
+
+### Correlação Ripple e Cardano
+```{r}
+
+ggplot(criptomoedas_wider) +
+  aes(x = XRP, y = ADA) +
+  geom_point()
+```
